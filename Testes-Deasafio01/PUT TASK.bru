@@ -1,0 +1,18 @@
+meta {
+  name: PUT TASK
+  type: http
+  seq: 4
+}
+
+put {
+  url: http://localhost:3000//tasks/a831d201-d178-4853-8a6d-43f3b9c49a0a
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "title": "Updated Task BRUNO PUT TEST",
+    "description": "Updated description BRUNO PUT TEST"
+  }
+}
