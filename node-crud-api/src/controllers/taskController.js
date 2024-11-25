@@ -10,12 +10,21 @@ const createTask = (req, res) => {
   let body = "";
 
   req.on("data", (chunk) => {
-    body += chunk.toString();
+    body += chunk;
   });
 
   req.on("end", () => {
     try {
       const { title, description } = JSON.parse(body);
+
+      if (!title || !description) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({ message: "Title and description are required" })
+        );
+        return;
+      }
+
       const newTask = {
         id: uuidv4(),
         title,
@@ -40,23 +49,37 @@ const updateTask = (req, res, id) => {
   let body = "";
 
   req.on("data", (chunk) => {
-    body += chunk.toString();
+    body += chunk;
   });
 
   req.on("end", () => {
-    const { title, description } = JSON.parse(body);
-    const task = tasks.find((task) => task.id === id);
+    try {
+      const { title, description } = JSON.parse(body);
 
-    if (task) {
-      task.title = title || task.title;
-      task.description = description || task.description;
-      task.updated_at = new Date();
+      if (!title || !description) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({ message: "Title and description are required" })
+        );
+        return;
+      }
 
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify(task));
-    } else {
-      res.writeHead(404, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ message: "Task Not Found" }));
+      const task = tasks.find((task) => task.id === id);
+
+      if (task) {
+        task.title = title;
+        task.description = description;
+        task.updated_at = new Date();
+
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(task));
+      } else {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ message: "Task Not Found" }));
+      }
+    } catch (error) {
+      res.writeHead(400, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ message: "Invalid JSON" }));
     }
   });
 };

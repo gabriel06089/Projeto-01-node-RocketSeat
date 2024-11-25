@@ -1,12 +1,12 @@
 const importTasksFromCSV = require("./utils/csvImport");
 const path = require("path");
 
-const filePath = path.join(__dirname, "tasks.csv"); // Caminho relativo para o arquivo CSV
+const filePath = path.join(__dirname, "tasks.csv");
 
 importTasksFromCSV(filePath)
   .then(() => {
-    console.log("Tasks imported successfully");
+    console.log("Tarefas importadas com sucesso");
   })
   .catch((error) => {
-    console.error("Error importing tasks:", error);
+    console.error("Erro ao importar tarefas:", error);
   });

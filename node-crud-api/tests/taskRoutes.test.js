@@ -51,6 +51,41 @@ describe("Task Routes", () => {
     req.end();
   });
 
+  it("should return 400 if title or description is missing in POST /tasks", (done) => {
+    const data = JSON.stringify({
+      title: "Task without description",
+    });
+
+    const options = {
+      hostname: "localhost",
+      port: 3000,
+      path: "/tasks",
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Length": data.length,
+      },
+    };
+
+    const req = http.request(options, (res) => {
+      assert.strictEqual(res.statusCode, 400);
+
+      let body = "";
+      res.on("data", (chunk) => {
+        body += chunk.toString();
+      });
+
+      res.on("end", () => {
+        const response = JSON.parse(body);
+        assert.strictEqual(response.message, "Title and description are required");
+        done();
+      });
+    });
+
+    req.write(data);
+    req.end();
+  });
+
   it("should update a task with PUT /tasks/:id", (done) => {
     // Create a task first
     const createData = JSON.stringify({
@@ -122,6 +157,111 @@ describe("Task Routes", () => {
     createReq.end();
   });
 
+  it("should return 400 if title or description is missing in PUT /tasks/:id", (done) => {
+    // Create a task first
+    const createData = JSON.stringify({
+      title: "Task to Update",
+      description: "Description of the task to update",
+    });
+
+    const createOptions = {
+      hostname: "localhost",
+      port: 3000,
+      path: "/tasks",
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Length": createData.length,
+      },
+    };
+
+    const createReq = http.request(createOptions, (createRes) => {
+      assert.strictEqual(createRes.statusCode, 201);
+
+      let createBody = "";
+      createRes.on("data", (chunk) => {
+        createBody += chunk.toString();
+      });
+
+      createRes.on("end", () => {
+        const createdTask = JSON.parse(createBody);
+
+        // Now update the created task with missing description
+        const updateData = JSON.stringify({
+          title: "Updated Task",
+        });
+
+        const updateOptions = {
+          hostname: "localhost",
+          port: 3000,
+          path: `/tasks/${createdTask.id}`,
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "Content-Length": updateData.length,
+          },
+        };
+
+        const updateReq = http.request(updateOptions, (updateRes) => {
+          assert.strictEqual(updateRes.statusCode, 400);
+
+          let updateBody = "";
+          updateRes.on("data", (chunk) => {
+            updateBody += chunk.toString();
+          });
+
+          updateRes.on("end", () => {
+            const response = JSON.parse(updateBody);
+            assert.strictEqual(response.message, "Title and description are required");
+            done();
+          });
+        });
+
+        updateReq.write(updateData);
+        updateReq.end();
+      });
+    });
+
+    createReq.write(createData);
+    createReq.end();
+  });
+
+  it("should return 404 if task is not found in PUT /tasks/:id", (done) => {
+    const updateData = JSON.stringify({
+      title: "Updated Task",
+      description: "Updated description",
+    });
+
+    const updateOptions = {
+      hostname: "localhost",
+      port: 3000,
+      path: "/tasks/nonexistent-id",
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Length": updateData.length,
+      },
+    };
+
+    const updateReq = http.request(updateOptions, (updateRes) => {
+      assert.strictEqual(updateRes.statusCode, 404);
+
+      let updateBody = "";
+      updateRes.on("data", (chunk) => {
+        updateBody += chunk.toString();
+      });
+
+      updateRes.on("end", () => {
+        const response = JSON.parse(updateBody);
+        assert.strictEqual(response.message, "Task Not Found");
+        done();
+      });
+    });
+
+    updateReq.write(updateData);
+    updateReq.end();
+  });
+
   it("should delete a task with DELETE /tasks/:id", (done) => {
     // Create a task first
     const createData = JSON.stringify({
@@ -182,6 +322,32 @@ describe("Task Routes", () => {
     createReq.end();
   });
 
+  it("should return 404 if task is not found in DELETE /tasks/:id", (done) => {
+    const deleteOptions = {
+      hostname: "localhost",
+      port: 3000,
+      path: "/tasks/nonexistent-id",
+      method: "DELETE",
+    };
+
+    const deleteReq = http.request(deleteOptions, (deleteRes) => {
+      assert.strictEqual(deleteRes.statusCode, 404);
+
+      let deleteBody = "";
+      deleteRes.on("data", (chunk) => {
+        deleteBody += chunk.toString();
+      });
+
+      deleteRes.on("end", () => {
+        const response = JSON.parse(deleteBody);
+        assert.strictEqual(response.message, "Task Not Found");
+        done();
+      });
+    });
+
+    deleteReq.end();
+  });
+
   it("should mark a task as complete with PATCH /tasks/:id/complete", (done) => {
     // Create a task first
     const createData = JSON.stringify({
@@ -240,6 +406,32 @@ describe("Task Routes", () => {
 
     createReq.write(createData);
     createReq.end();
+  });
+
+  it("should return 404 if task is not found in PATCH /tasks/:id/complete", (done) => {
+    const completeOptions = {
+      hostname: "localhost",
+      port: 3000,
+      path: "/tasks/nonexistent-id/complete",
+      method: "PATCH",
+    };
+
+    const completeReq = http.request(completeOptions, (completeRes) => {
+      assert.strictEqual(completeRes.statusCode, 404);
+
+      let completeBody = "";
+      completeRes.on("data", (chunk) => {
+        completeBody += chunk.toString();
+      });
+
+      completeRes.on("end", () => {
+        const response = JSON.parse(completeBody);
+        assert.strictEqual(response.message, "Task Not Found");
+        done();
+      });
+    });
+
+    completeReq.end();
   });
 
   it("should import tasks from CSV file", async () => {
